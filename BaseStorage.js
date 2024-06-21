@@ -13,7 +13,7 @@ class StorageBase {
         const month = `${date.getMonth() + 1}`.padStart(2, '0')
         const year = `${date.getFullYear()}`
 
-        return path.join(`${baseDir || ''}`, year, month)
+        return path.posix.join(`${baseDir || ''}`, year, month)
     }
 
     generateUnique(file, dir, name, ext, i) {
@@ -38,7 +38,7 @@ class StorageBase {
                 i = i + 1
                 return this.generateUnique(file, dir, name, ext, i)
             } else {
-                return path.join(dir, filename)
+                return path.posix.join(dir, filename)
             }
         })
     }

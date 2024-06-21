@@ -85,10 +85,12 @@ class GithubPagesStorage extends BaseAdapter {
             owner: this.owner,
             repo: this.repo,
             ref: this.branch,
-            path: path.join(targetDir || this.getTargetDir(), filename)
+            path: path.posix.join(targetDir || this.getTargetDir(), filename)
         })
     }
-    async convertImage(buffer) {
+    async convertImage(file) {
+        const buffer = await readFile(file.path)
+
         if (!this.imageFormat) {
             return { buffer: buffer.toString('base64') }
         }
@@ -96,12 +98,24 @@ class GithubPagesStorage extends BaseAdapter {
         const { mime } = await fileTypeFromBuffer(buffer)
 
         if (/image/.test(mime) && mime.match(/image\/(.*)/)[1] !== this.imageFormat) {
-            return {
-                buffer: await sharp(buffer).toFormat(this.imageFormat).toBuffer(),
-                mime: `image/${this.imageFormat}`,
-                encoding: 'base64',
-                size: buffer.length,
-                name: `image.${this.imageFormat}`
+            const originalExt = file.ext
+            const newExt = `.${this.imageFormat}`
+
+            try {
+                const newBuffer = await sharp(buffer).toFormat(this.imageFormat).toBuffer()
+
+                return {
+                    buffer: newBuffer.toString('base64'),
+                    mimetype: `image/${this.imageFormat}`,
+                    encoding: 'base64',
+                    size: newBuffer.length,
+                    originalExt,
+                    ext: newExt,
+                    name: file.name.replace(new RegExp(`${originalExt}$`), newExt)
+                }
+            } catch (err) {
+                console.error('Failed to convert image', err)
+                return { buffer: buffer.toString('base64') }
             }
         }
 
@@ -122,7 +136,7 @@ class GithubPagesStorage extends BaseAdapter {
         }
     }
     async exists(file, targetDir) {
-        const sha = createHash('sha1').update(file.base64).digest('hex')
+        const sha = createHash('sha1').update(file.buffer).digest('hex')
 
         try {
             const { headers } = await this.octokitGetContent({ method: 'HEAD', targetDir, filename: file.name })
@@ -142,9 +156,9 @@ class GithubPagesStorage extends BaseAdapter {
             this.checkSizeAndEvict()
 
             if (shaResponse === sha) {
-                return true
+                return sha
             }
-            return false
+            return true
         } catch (e) {
             if (e.status === 404) {
                 return false
@@ -153,9 +167,7 @@ class GithubPagesStorage extends BaseAdapter {
         }
     }
     async save(file, targetDir) {
-        const buffer = await readFile(file.path)
-
-        const converted = await this.convertImage(buffer)
+        const converted = await this.convertImage(file)
         const filepath = await this.getUniqueFileName({ ...file, ...converted }, targetDir || this.getTargetDir())
         const filename = filepath.split('/').pop()
 
@@ -165,7 +177,7 @@ class GithubPagesStorage extends BaseAdapter {
                 repo: this.repo,
                 path: filepath,
                 message: `https://june07.com ${filename}`,
-                content: base64,
+                content: converted.buffer,
                 branch: this.branch,
                 committer: this.committer,
             })
