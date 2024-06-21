@@ -3,6 +3,7 @@ const { readFile } = require('fs').promises
 const { createHash } = require('crypto')
 const path = require('path')
 const BaseAdapter = require('./BaseStorage')
+const sharp = require('sharp')
 
 const {
     GHOST_STORAGE_GITHUB_TOKEN,
@@ -10,7 +11,9 @@ const {
     GHOST_STORAGE_GITHUB_REPO,
     GHOST_STORAGE_GITHUB_BRANCH,
     GHOST_STORAGE_GITHUB_DESTINATION,
-    GHOST_STORAGE_GITHUB_ORIGIN
+    GHOST_STORAGE_GITHUB_ORIGIN,
+    GHOST_STORAGE_GITHUB_IMAGE_FORMAT,
+    GHOST_STORAGE_GITHUB_ETAG_CACHE_SIZE
 } = process.env
 
 class GithubPagesStorage extends BaseAdapter {
@@ -24,6 +27,8 @@ class GithubPagesStorage extends BaseAdapter {
             branch,
             destination,
             origin,
+            imageFormat,
+            etagCacheSize
         } = config
 
         this.etags = {}
@@ -32,6 +37,8 @@ class GithubPagesStorage extends BaseAdapter {
         this.repo = GHOST_STORAGE_GITHUB_REPO || repo
         this.branch = GHOST_STORAGE_GITHUB_BRANCH || branch || 'main'
         this.origin = GHOST_STORAGE_GITHUB_ORIGIN || origin
+        this.imageFormat = GHOST_STORAGE_GITHUB_IMAGE_FORMAT || imageFormat
+        this.etagCacheSize = GHOST_STORAGE_GITHUB_ETAG_CACHE_SIZE || etagCacheSize || 10000
         this.committer = {
             name: 'June07',
             email: 'support@june07.com'
@@ -81,6 +88,33 @@ class GithubPagesStorage extends BaseAdapter {
             path: path.join(targetDir || this.getTargetDir(), filename)
         })
     }
+    async getBase64(buffer) {
+        if (!this.imageFormat) {
+            return buffer.toString('base64')
+        }
+        const { fileTypeFromBuffer } = await import('file-type')
+        const { mime } = await fileTypeFromBuffer(buffer)
+
+        if (/image/.test(mime) && mime.match(/image\/(.*)/)[1] !== this.imageFormat) {
+            return await sharp(buffer).toFormat(this.imageFormat).toBuffer()
+        }
+
+        return buffer.toString('base64')
+    }
+    checkSizeAndEvict() {
+        const keys = Object.keys(this.etags)
+
+        if (keys.length > this.etagCacheSize) {
+            // Sort keys by timestamp
+            keys.sort((a, b) => this.etags[a].timestamp - this.etags[b].timestamp)
+
+            // Remove the oldest entries until the size is within the limit
+            while (keys.length > this.etagCacheSize) {
+                const oldestKey = keys.shift()
+                delete this.etags[oldestKey]
+            }
+        }
+    }
     async exists(file, targetDir) {
         const sha = createHash('sha1').update(file.base64).digest('hex')
 
@@ -95,7 +129,11 @@ class GithubPagesStorage extends BaseAdapter {
             const response = await this.octokitGetContent({ targetDir, filename: file.name })
             const base64Response = Buffer.from(response.data.content, 'base64').toString('base64')
             const shaResponse = createHash('sha1').update(base64Response).digest('hex')
-            this.etags[sha] = headers.etag
+            this.etags[sha] = {
+                timestamp: Date.now(),
+                etag: headers.etag
+            }
+            this.checkSizeAndEvict()
 
             if (shaResponse === sha) {
                 return true
@@ -109,7 +147,9 @@ class GithubPagesStorage extends BaseAdapter {
         }
     }
     async save(file, targetDir) {
-        const base64 = await readFile(file.path, 'base64')
+        const buffer = await readFile(file.path)
+
+        const base64 = await this.getBase64(buffer)
         const filepath = await this.getUniqueFileName({ ...file, base64 }, targetDir || this.getTargetDir())
         const filename = filepath.split('/').pop()
 
@@ -131,7 +171,6 @@ class GithubPagesStorage extends BaseAdapter {
             throw e
         }
     }
-
     serve() {
         return (req, res, next) => next
     }
