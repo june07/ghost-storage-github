@@ -88,18 +88,24 @@ class GithubPagesStorage extends BaseAdapter {
             path: path.join(targetDir || this.getTargetDir(), filename)
         })
     }
-    async getBase64(buffer) {
+    async convertImage(buffer) {
         if (!this.imageFormat) {
-            return buffer.toString('base64')
+            return { buffer: buffer.toString('base64') }
         }
         const { fileTypeFromBuffer } = await import('file-type')
         const { mime } = await fileTypeFromBuffer(buffer)
 
         if (/image/.test(mime) && mime.match(/image\/(.*)/)[1] !== this.imageFormat) {
-            return await sharp(buffer).toFormat(this.imageFormat).toBuffer()
+            return {
+                buffer: await sharp(buffer).toFormat(this.imageFormat).toBuffer(),
+                mime: `image/${this.imageFormat}`,
+                encoding: 'base64',
+                size: buffer.length,
+                name: `image.${this.imageFormat}`
+            }
         }
 
-        return buffer.toString('base64')
+        return { buffer: buffer.toString('base64') }
     }
     checkSizeAndEvict() {
         const keys = Object.keys(this.etags)
@@ -149,8 +155,8 @@ class GithubPagesStorage extends BaseAdapter {
     async save(file, targetDir) {
         const buffer = await readFile(file.path)
 
-        const base64 = await this.getBase64(buffer)
-        const filepath = await this.getUniqueFileName({ ...file, base64 }, targetDir || this.getTargetDir())
+        const converted = await this.convertImage(buffer)
+        const filepath = await this.getUniqueFileName({ ...file, ...converted }, targetDir || this.getTargetDir())
         const filename = filepath.split('/').pop()
 
         try {
