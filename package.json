@@ -1,0 +1,29 @@
+{
+  "name": "ghost-storage-github",
+  "version": "1.0.0",
+  "description": "Save Ghost Blog Content to Github",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/june07/ghost-storage-github.git"
+  },
+  "keywords": [
+    "ghost",
+    "github",
+    "storage"
+  ],
+  "author": "june07",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/june07/ghost-storage-github/issues"
+  },
+  "homepage": "https://github.com/june07/ghost-storage-github#readme",
+  "dependencies": {
+    "@octokit/plugin-retry": "^7.1.1",
+    "@octokit/plugin-throttling": "^9.3.0",
+    "@octokit/rest": "^21.0.0"
+  }
+}
