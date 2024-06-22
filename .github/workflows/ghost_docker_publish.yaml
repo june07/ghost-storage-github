@@ -82,13 +82,22 @@ jobs:
               run: |
                 docker image ls
                 docker push june07/ghost-storage-github:latest
-                docker push june07/ghost-storage-github:$VERSION
+                docker push june07/ghost-storage-github:${VERSION}
     push-ghcr:
         needs: build-docker
         runs-on: ubuntu-latest
         steps:
+            - name: Download Artifacts
+              uses: actions/download-artifact@v3
+              with:
+                  name: Docker Image
+                  path: .
+
+            - name: Load image
+              run: docker load -i docker-image.tar
+
             - name: Push Docker image (GitHub Container Registry)
               run: |
                 docker image ls
                 docker push ghcr.io/june07/ghost-storage-github:latest
-                docker push ghcr.io/june07/ghost-storage-github:$VERSION
+                docker push ghcr.io/june07/ghost-storage-github:${VERSION}
