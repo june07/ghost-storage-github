@@ -57,10 +57,11 @@ jobs:
             - name: Log in to Docker Hub
               uses: docker/login-action@v2
               with:
-                username: ${{ secrets.DOCKER_USERNAME }}
+                username: june07
                 password: ${{ secrets.DOCKER_PAT }}
             - name: Push Docker image (Docker Container Registry)
               run: |
+                docker image ls
                 docker push june07/ghost-storage-github:latest
                 docker push june07/ghost-storage-github:$VERSION
     push-ghcr:
@@ -69,5 +70,6 @@ jobs:
         steps:
             - name: Push Docker image (GitHub Container Registry)
               run: |
+                docker image ls
                 docker push ghcr.io/june07/ghost-storage-github:latest
                 docker push ghcr.io/june07/ghost-storage-github:$VERSION
