@@ -1,0 +1,56 @@
+name: Publish Ghost Docker Image
+
+on:
+  workflow_run:
+    workflows: ["Node.js Package"]
+    types:
+      - completed
+
+jobs:
+  build-docker:
+    runs-on: ubuntu-latest
+    needs: publish-npm
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Wait for package availability
+        id: wait-for-package
+        run: |
+          PACKAGE_NAME="@667/ghost-storage-github"
+          VERSION="${{ needs.publish.outputs.version }}"
+          TIMEOUT=300 # Timeout in seconds
+          INTERVAL=10 # Interval between checks in seconds
+          END=$((SECONDS+TIMEOUT))
+
+          while [ $SECONDS -lt $END ]; do
+            if npm info $PACKAGE_NAME@$VERSION > /dev/null 2>&1; then
+              echo "Package $PACKAGE_NAME@$VERSION is available!"
+              exit 0
+            fi
+            echo "Waiting for package $PACKAGE_NAME@$VERSION to be available..."
+            sleep $INTERVAL
+          done
+
+          echo "Package $PACKAGE_NAME@$VERSION did not become available in time."
+          exit 1
+
+      - name: Build Docker image
+        run: docker build -t @667/ghost-storage-github .
+
+      - name: Push Docker image
+        run: docker push @667/ghost-storage-github
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PAT }}
+      
+      - name: Push Docker image to Docker Hub
+        run: |
+          VERSION="${{ needs.publish.outputs.version }}"
+          docker push @667/ghost-storage-github
