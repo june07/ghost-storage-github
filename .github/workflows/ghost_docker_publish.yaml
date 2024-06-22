@@ -48,7 +48,17 @@ jobs:
                   -t june07/ghost-storage-github:$VERSION \
                   -t ghcr.io/june07/ghost-storage-github:latest \
                   -t ghcr.io/june07/ghost-storage-github:$VERSION
-                docker image ls
+                docker save june07/ghost-storage-github:latest \
+                    june07/ghost-storage-github:$VERSION \
+                    ghcr.io/june07/ghost-storage-github:latest \
+                    ghcr.io/june07/ghost-storage-github:$VERSION \
+                    -o docker-image.tar
+                
+            - name: Upload Artifacts
+              uses: actions/upload-artifact@v3
+              with:
+                  name: Docker Image
+                  path: docker-image.tar
 
     push-docker-hub:
         needs: build-docker
@@ -59,6 +69,15 @@ jobs:
               with:
                 username: june07
                 password: ${{ secrets.DOCKER_PAT }}
+            - name: Download Artifacts
+              uses: actions/download-artifact@v3
+              with:
+                  name: Docker Image
+                  path: .
+
+            - name: Load image
+              run: docker load -i docker-image.tar
+
             - name: Push Docker image (Docker Container Registry)
               run: |
                 docker image ls
