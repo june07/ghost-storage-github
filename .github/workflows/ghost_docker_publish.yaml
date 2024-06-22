@@ -49,14 +49,18 @@ jobs:
                   -t ghcr.io/june07/ghost-storage-github:latest \
                   -t ghcr.io/june07/ghost-storage-github:$VERSION
 
+    push-docker-hub:
+        needs: build-docker
+        runs-on: ubuntu-latest
+        steps:
             - name: Push Docker image (Docker Container Registry)
               run: |
-                docker push june07/ghost-storage-github:latest
-                docker push june07/ghost-storage-github:$VERSION
-              env:
-                  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-                  DOCKER_PASSWORD: ${{ secrets.DOCKER_PAT }}
-
+                docker push --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PAT }} june07/ghost-storage-github:latest
+                docker push --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PAT }} june07/ghost-storage-github:$VERSION
+    push-ghcr:
+        needs: build-docker
+        runs-on: ubuntu-latest
+        steps:
             - name: Push Docker image (GitHub Container Registry)
               run: |
                 docker push ghcr.io/june07/ghost-storage-github:latest
