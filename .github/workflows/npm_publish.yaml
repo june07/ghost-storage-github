@@ -33,10 +33,4 @@ jobs:
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
-
-      - name: Get version from package.json
-        id: get-version
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "Published version: $VERSION"
-          echo "::set-output name=version::$VERSION"
+          

@@ -18,11 +18,13 @@ jobs:
               with:
                   node-version: 20
 
+            - name: Set VERSION variable from package.json
+              run: echo "VERSION=$(jq -r .version package.json)" >> $GITHUB_ENV
+
             - name: Wait for package availability
               id: wait-for-package
               run: |
                   PACKAGE_NAME="@667/ghost-storage-github"
-                  VERSION="${{ needs.publish.outputs.version }}"
                   TIMEOUT=300 # Timeout in seconds
                   INTERVAL=10 # Interval between checks in seconds
                   END=$((SECONDS+TIMEOUT))
@@ -41,16 +43,14 @@ jobs:
 
             - name: Build Docker image
               run: |
-                VERSION="${{ needs.publish.outputs.version }}"
                 docker build . \
-                    -t june07/ghost-storage-github:latest \
-                    -t june07/ghost-storage-github:$VERSION \
-                    -t ghcr.io/june07/ghost-storage-github:latest \
-                    -t ghcr.io/june07/ghost-storage-github:$VERSION
+                  -t june07/ghost-storage-github:latest \
+                  -t june07/ghost-storage-github:$VERSION \
+                  -t ghcr.io/june07/ghost-storage-github:latest \
+                  -t ghcr.io/june07/ghost-storage-github:$VERSION
 
             - name: Push Docker image (Docker Container Registry)
               run: |
-                VERSION="${{ needs.publish.outputs.version }}"
                 docker push june07/ghost-storage-github:latest
                 docker push june07/ghost-storage-github:$VERSION
               env:
@@ -59,6 +59,5 @@ jobs:
 
             - name: Push Docker image (GitHub Container Registry)
               run: |
-                  VERSION="${{ needs.publish.outputs.version }}"
-                  docker push ghcr.io/june07/ghost-storage-github:latest
-                  docker push ghcr.io/june07/ghost-storage-github:$VERSION
+                docker push ghcr.io/june07/ghost-storage-github:latest
+                docker push ghcr.io/june07/ghost-storage-github:$VERSION
