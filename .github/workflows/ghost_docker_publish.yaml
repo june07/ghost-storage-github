@@ -47,7 +47,7 @@ jobs:
                   -t june07/ghost-storage-github:latest \
                   -t june07/ghost-storage-github:$VERSION \
                   -t ghcr.io/june07/ghost-storage-github:latest \
-                  -t ghcr.io/june07/ghost-storage-github:$VERSION \
+                  -t ghcr.io/june07/ghost-storage-github:$VERSION
                 docker image ls
 
     push-docker-hub:
