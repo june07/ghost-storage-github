@@ -40,15 +40,25 @@ jobs:
                   exit 1
 
             - name: Build Docker image
-              run: docker build -t @667/ghost-storage-github .
+              run: |
+                VERSION="${{ needs.publish.outputs.version }}"
+                docker build . \
+                    -t june07/ghost-storage-github:latest \
+                    -t june07/ghost-storage-github:$VERSION \
+                    -t ghcr.io/june07/ghost-storage-github:latest \
+                    -t ghcr.io/june07/ghost-storage-github:$VERSION
 
-            - name: Push Docker image
-              run: docker push @667/ghost-storage-github
+            - name: Push Docker image (Docker Container Registry)
+              run: |
+                VERSION="${{ needs.publish.outputs.version }}"
+                docker push june07/ghost-storage-github:latest
+                docker push june07/ghost-storage-github:$VERSION
               env:
                   DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
                   DOCKER_PASSWORD: ${{ secrets.DOCKER_PAT }}
 
-            - name: Push Docker image to Docker Hub
+            - name: Push Docker image (GitHub Container Registry)
               run: |
                   VERSION="${{ needs.publish.outputs.version }}"
-                  docker push @667/ghost-storage-github
+                  docker push ghcr.io/june07/ghost-storage-github:latest
+                  docker push ghcr.io/june07/ghost-storage-github:$VERSION
