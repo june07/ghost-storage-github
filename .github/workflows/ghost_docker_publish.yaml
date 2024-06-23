@@ -19,7 +19,9 @@ jobs:
                   node-version: 20
 
             - name: Set VERSION variable from package.json
-              run: echo "VERSION=$(jq -r .version package.json)" >> $GITHUB_ENV
+              run: |
+                echo "VERSION=$(jq -r .version package.json)" >> $GITHUB_ENV
+                echo "VERSION=$(jq -r .version package.json)" > VERSION.txt
 
             - name: Wait for package availability
               id: wait-for-package
@@ -58,8 +60,10 @@ jobs:
               uses: actions/upload-artifact@v4
               with:
                   name: Docker Image
-                  path: docker-image.tar
-
+                  path: |
+                    docker-image.tar
+                    VERSION.txt
+          
     push-docker-hub:
         needs: build-docker
         runs-on: ubuntu-latest
@@ -75,15 +79,18 @@ jobs:
                   name: Docker Image
                   path: .
 
+            - name: Set VERSION variable from VERSION.txt
+              run: cat VERSION.txt >> $GITHUB_ENV
+
             - name: Load image
               run: docker load -i docker-image.tar
 
             - name: Push Docker image (Docker Container Registry)
               run: |
                 docker image ls
-                echo "june07/ghost-storage-github:${VERSION}"
+                echo "june07/ghost-storage-github:{{ env.VERSION }}"
                 docker push june07/ghost-storage-github:latest
-                docker push june07/ghost-storage-github:${VERSION}
+                docker push june07/ghost-storage-github:{{ env.VERSION }}
     push-ghcr:
         needs: build-docker
         runs-on: ubuntu-latest
@@ -101,12 +108,15 @@ jobs:
                   name: Docker Image
                   path: .
 
+            - name: Set VERSION variable from VERSION.txt
+              run: cat VERSION.txt >> $GITHUB_ENV
+            
             - name: Load image
               run: docker load -i docker-image.tar
 
             - name: Push Docker image (GitHub Container Registry)
               run: |
                 docker image ls
-                echo "ghcr.io/june07/ghost-storage-github:${VERSION}"
+                echo "ghcr.io/june07/ghost-storage-github:$VERSION"
                 docker push ghcr.io/june07/ghost-storage-github:latest
-                docker push ghcr.io/june07/ghost-storage-github:${VERSION}
+                docker push ghcr.io/june07/ghost-storage-github:$VERSION
