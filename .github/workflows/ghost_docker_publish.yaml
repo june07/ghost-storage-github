@@ -64,9 +64,6 @@ jobs:
         needs: build-docker
         runs-on: ubuntu-latest
         steps:
-            - name: Set VERSION variable from package.json
-              run: echo "VERSION=$(jq -r .version package.json)" >> $GITHUB_ENV
-              
             - name: Log in to Docker Hub
               uses: docker/login-action@v2
               with:
@@ -84,15 +81,13 @@ jobs:
             - name: Push Docker image (Docker Container Registry)
               run: |
                 docker image ls
+                echo "june07/ghost-storage-github:${VERSION}"
                 docker push june07/ghost-storage-github:latest
                 docker push june07/ghost-storage-github:${VERSION}
     push-ghcr:
         needs: build-docker
         runs-on: ubuntu-latest
         steps:
-            - name: Set VERSION variable from package.json
-              run: echo "VERSION=$(jq -r .version package.json)" >> $GITHUB_ENV
-
             - name: Log in to GitHub Container Registry
               uses: docker/login-action@v2
               with:
@@ -112,5 +107,6 @@ jobs:
             - name: Push Docker image (GitHub Container Registry)
               run: |
                 docker image ls
+                echo "ghcr.io/june07/ghost-storage-github:${VERSION}"
                 docker push ghcr.io/june07/ghost-storage-github:latest
                 docker push ghcr.io/june07/ghost-storage-github:${VERSION}
