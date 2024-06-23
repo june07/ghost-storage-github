@@ -3,8 +3,8 @@ FROM ghost:alpine as june07
 
 WORKDIR $GHOST_INSTALL/current
 
-RUN apk update -y && apk install g++ make python3 -y; \
-    su-exec node yarn add @667/ghost-storage-github@1.1.3; \
+RUN apk update && apk install g++ make python3 -y; \
+    su-exec node yarn add @667/ghost-storage-github; \
     cd node_modules/@667/ghost-storage-github; \
     rm -fR node_modules/sharp; \
     npm install --cpu=x64 --os=linux --libc=musl sharp --force
