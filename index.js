@@ -102,7 +102,7 @@ class GithubPagesStorage extends BaseAdapter {
             const newExt = `.${this.imageFormat}`
 
             try {
-                const newBuffer = await sharp(buffer).toFormat(this.imageFormat).toBuffer()
+                const newBuffer = await sharp(buffer, { animated: true }).toFormat(this.imageFormat).toBuffer()
 
                 return {
                     buffer: newBuffer.toString('base64'),
