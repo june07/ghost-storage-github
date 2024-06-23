@@ -88,9 +88,9 @@ jobs:
             - name: Push Docker image (Docker Container Registry)
               run: |
                 docker image ls
-                echo "june07/ghost-storage-github:{{ env.VERSION }}"
+                echo "june07/ghost-storage-github:${{ env.VERSION }}"
                 docker push june07/ghost-storage-github:latest
-                docker push june07/ghost-storage-github:{{ env.VERSION }}
+                docker push june07/ghost-storage-github:${{ env.VERSION }}
     push-ghcr:
         needs: build-docker
         runs-on: ubuntu-latest
