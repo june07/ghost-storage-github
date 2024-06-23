@@ -97,6 +97,10 @@ class GithubPagesStorage extends BaseAdapter {
         const { fileTypeFromBuffer } = await import('file-type')
         const { mime } = await fileTypeFromBuffer(buffer)
 
+        if (!/image/.test(mime)) {
+            // return non image files as-is
+            return { buffer: buffer.toString('base64') }
+        }
         if (/image/.test(mime) && mime.match(/image\/(.*)/)[1] !== this.imageFormat) {
             const originalExt = file.ext
             const newExt = `.${this.imageFormat}`
