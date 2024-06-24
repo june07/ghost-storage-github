@@ -10,6 +10,7 @@ This project was inspired by [ifvictr/ghost-storage-github](https://github.com/i
 
 - **GitHub as Storage Backend**: Seamlessly integrate Ghost with GitHub to store your content.
 - **Image Transcoding**: Supports automatic image transcoding, optimizing images for different use cases, particularly quicker images being served for your blog (images are transcoded to webp by default)
+- **Reuse Duplicate Files**: If a file has the same filename AND the same hash then the current link to that image will be returned instead of being uploaded under another filename. Only if the hash is different will the file be uploaded under a different name. This is to avoid duplicating files on the backend.
 
 ## Configuration
 
