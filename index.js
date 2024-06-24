@@ -160,7 +160,10 @@ class GithubPagesStorage extends BaseAdapter {
             this.checkSizeAndEvict()
 
             if (shaResponse === sha) {
-                return sha
+                return {
+                    sha,
+                    path: response.data.path,
+                    downloadUrl: response.data.download_url }
             }
             return true
         } catch (e) {
@@ -173,6 +176,11 @@ class GithubPagesStorage extends BaseAdapter {
     async save(file, targetDir) {
         const converted = await this.convertImage(file)
         const filepath = await this.getUniqueFileName({ ...file, ...converted }, targetDir || this.getTargetDir())
+
+        if (!(filepath instanceof String)) {
+            const { path, downloadUrl } = filepath
+            return this.origin ? `${this.origin}/${path}` : downloadUrl
+        }
         const filename = filepath.split('/').pop()
 
         try {

@@ -32,8 +32,8 @@ class StorageBase {
 
         const exists = await this.exists(file, dir)
         // if the file exists but the sha is not the same then create a new filename otherwise don't
-        if (exists && typeof exists === 'string') {
-            throw new Error('File already exists')
+        if (exists && typeof exists === 'object') {
+            return exists
         } else if (exists) {
             i = i + 1
             return await this.generateUnique(file, dir, i)
