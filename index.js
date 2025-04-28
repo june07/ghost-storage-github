@@ -106,7 +106,7 @@ class GithubPagesStorage extends BaseAdapter {
             const newExt = `.${this.imageFormat}`
 
             try {
-                const newBuffer = await sharp(buffer, { animated: true }).toFormat(this.imageFormat).toBuffer()
+                const newBuffer = await sharp(buffer, { animated: true, limitInputPixels: false }).toFormat(this.imageFormat).toBuffer()
 
                 return {
                     buffer: newBuffer.toString('base64'),
@@ -177,8 +177,9 @@ class GithubPagesStorage extends BaseAdapter {
         const converted = await this.convertImage(file)
         const filepath = await this.getUniqueFileName({ ...file, ...converted }, targetDir || this.getTargetDir())
 
-        if (!(filepath instanceof String)) {
+        if (typeof filepath !== 'string') {
             const { path, downloadUrl } = filepath
+            
             return this.origin ? `${this.origin}/${path}` : downloadUrl
         }
         const filename = filepath.split('/').pop()

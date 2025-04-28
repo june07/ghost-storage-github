@@ -31,6 +31,7 @@ class StorageBase {
         }
 
         const exists = await this.exists(file, dir)
+
         // if the file exists but the sha is not the same then create a new filename otherwise don't
         if (exists && typeof exists === 'object') {
             return exists
@@ -45,6 +46,7 @@ class StorageBase {
     async getUniqueFileName(file, targetDir) {
         const sanitizedName = this.getSanitizedFileName(file.name, file.ext === '' ? undefined : file.ext)
         const uniqueName = await this.generateUnique({ ...file, name: sanitizedName }, targetDir, 0)
+        
         return uniqueName
     }
 
