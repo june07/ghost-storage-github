@@ -89,7 +89,21 @@ class GithubPagesStorage extends BaseAdapter {
         })
     }
     async convertImage(file) {
+        const isOriginal = /_o(\.\w+)$/.test(file.name)
         const buffer = await readFile(file.path)
+
+        if (isOriginal) {
+            console.log('Skipping image conversion for original image ', file.name)
+            let nameFix
+            if (/.webp$/.test(file.name) && (file.ext !== '.webp' || file.mimetype !== 'image/webp')) {
+                console.log('Fixing incorrect .webp extension for image with mimetype ', file.mimetype, ' and name ', file.name)
+                nameFix = file.name.replace(/\.webp$/, file.ext)
+            }
+            return {
+                ...nameFix ? { name: nameFix } : {}, // fix Ghost core changing the extension of the original image
+                buffer: buffer.toString('base64')
+            }
+        }
 
         if (!this.imageFormat) {
             return { buffer: buffer.toString('base64') }
@@ -104,22 +118,29 @@ class GithubPagesStorage extends BaseAdapter {
         if (/image/.test(filetype.mime) && filetype.mime.match(/image\/(.*)/)[1] !== this.imageFormat) {
             const originalExt = file.ext
             const newExt = `.${this.imageFormat}`
+            let newBuffer
 
             try {
-                const newBuffer = await sharp(buffer, { animated: true, limitInputPixels: false }).toFormat(this.imageFormat).toBuffer()
+                if (file.ext !== `.${this.imageFormat}` && file.mimetype !== `image/${this.imageFormat}`) {
+                    newBuffer = await sharp(buffer, { animated: true, limitInputPixels: false }).toFormat(this.imageFormat).toBuffer()
+                }
 
-                return {
-                    buffer: newBuffer.toString('base64'),
+                const convertedImage = {
+                    buffer: newBuffer?.toString('base64') || buffer.toString('base64'),
                     mimetype: `image/${this.imageFormat}`,
                     encoding: 'base64',
-                    size: newBuffer.length,
+                    size: newBuffer?.length || buffer.length,
                     originalExt,
                     ext: newExt,
                     name: file.name.replace(new RegExp(`${originalExt}$`), newExt)
                 }
+
+                console.log('Converted image ', convertedImage.name)
+
+                return convertedImage
             } catch (err) {
                 console.error('Failed to convert image', err)
-                return { buffer: buffer.toString('base64') }
+                return { buffer: newBuffer?.toString('base64') || buffer.toString('base64') }
             }
         }
 
@@ -141,12 +162,19 @@ class GithubPagesStorage extends BaseAdapter {
     }
     async exists(file, targetDir) {
         const sha = createHash('sha1').update(file.buffer).digest('hex')
+        const cacheKey = `${targetDir}/${file.name}`
+        const now = Date.now()
+
+        // Check cache first
+        if (this.etags[cacheKey]?.sha === sha && this.etags[cacheKey]?.timestamp > now - 5 * 60 * 1000) {
+            return this.etags[cacheKey]
+        }
 
         try {
             const { headers } = await this.octokitGetContent({ method: 'HEAD', targetDir, filename: file.name })
 
             // if the etag is there then we can bypass the full request and just return true
-            if (this.etags[sha] === headers.etag) {
+            if (this.etags[sha]?.etag === headers.etag) {
                 return sha
             }
 
@@ -154,16 +182,20 @@ class GithubPagesStorage extends BaseAdapter {
             const base64Response = Buffer.from(response.data.content, 'base64').toString('base64')
             const shaResponse = createHash('sha1').update(base64Response).digest('hex')
             this.etags[sha] = {
-                timestamp: Date.now(),
+                timestamp: now,
                 etag: headers.etag
             }
             this.checkSizeAndEvict()
 
             if (shaResponse === sha) {
-                return {
+                this.etags[cacheKey] = {
                     sha,
                     path: response.data.path,
-                    downloadUrl: response.data.download_url }
+                    downloadUrl: response.data.download_url,
+                    etag: response.headers.etag,
+                    timestamp: now
+                }
+                return this.etags[cacheKey]
             }
             return true
         } catch (e) {
@@ -174,12 +206,13 @@ class GithubPagesStorage extends BaseAdapter {
         }
     }
     async save(file, targetDir) {
+        console.log(`Saving file ${JSON.stringify(file)}`)
         const converted = await this.convertImage(file)
         const filepath = await this.getUniqueFileName({ ...file, ...converted }, targetDir || this.getTargetDir())
 
         if (typeof filepath !== 'string') {
             const { path, downloadUrl } = filepath
-            
+
             return this.origin ? `${this.origin}/${path}` : downloadUrl
         }
         const filename = filepath.split('/').pop()

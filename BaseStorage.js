@@ -17,18 +17,22 @@ class StorageBase {
     }
 
     async generateUnique(file, dir, i) {
-        let append = ''
+        function getIndexedName(originalName, index) {
+            const parsed = path.parse(originalName)
+            // parsed.name = e.g. "a" or "a-1"
+            // parsed.ext  = ".jpg"
 
-        if (i) {
-            append = '-' + i
+            // Strip any trailing -<digits> from the basename
+            const base = parsed.name.replace(/-\d+$/, '')
+
+            // Only add a suffix when index > 0
+            const suffix = index > 0 ? `-${index}` : ''
+
+            return `${base}${suffix}${parsed.ext}`
         }
 
         file.originalName = file.name
-        if (file.ext) {
-            file.name = file.name.replace(file.ext, append + file.ext)
-        } else {
-            file.name = file.name + append
-        }
+        file.name = getIndexedName(file.name, i)
 
         const exists = await this.exists(file, dir)
 
@@ -46,7 +50,7 @@ class StorageBase {
     async getUniqueFileName(file, targetDir) {
         const sanitizedName = this.getSanitizedFileName(file.name, file.ext === '' ? undefined : file.ext)
         const uniqueName = await this.generateUnique({ ...file, name: sanitizedName }, targetDir, 0)
-        
+
         return uniqueName
     }
 
