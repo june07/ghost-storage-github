@@ -1,5 +1,5 @@
 # Note: problems using ghost due to sharp dependency issues
-FROM ghost:alpine as june07
+FROM ghost:alpine AS june07
 
 WORKDIR $GHOST_INSTALL/current
 
