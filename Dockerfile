@@ -10,7 +10,7 @@ RUN apk add --no-cache g++ make python3 && \
     pnpm add @667/ghost-storage-github && \
     cd node_modules/@667/ghost-storage-github && \
     rm -rf node_modules/sharp && \
-    pnpm install --os=linux --libc=musl sharp
+    npm install --os=linux --libc=musl sharp
 
 FROM ghost:alpine
 
