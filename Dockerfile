@@ -7,10 +7,10 @@ WORKDIR $GHOST_INSTALL/current
 # 2. Run directly (Ghost images run as root during build anyway)
 # 3. Use yarn/npm cleanly
 RUN apk add --no-cache g++ make python3 && \
-    pnpm add @667/ghost-storage-github && \
+    SHARP_IGNORE_GLOBAL_LIBVIPS=1 pnpm add @667/ghost-storage-github && \
     cd node_modules/@667/ghost-storage-github && \
     rm -rf node_modules/sharp && \
-    npm install --os=linux --libc=musl sharp
+    pnpm install --os=linux --libc=musl sharp
 
 FROM ghost:alpine
 
