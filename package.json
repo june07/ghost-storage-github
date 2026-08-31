@@ -22,10 +22,10 @@
   },
   "homepage": "https://github.com/june07/ghost-storage-github#readme",
   "dependencies": {
-    "@octokit/plugin-retry": "^7.1.1",
-    "@octokit/plugin-throttling": "^9.3.0",
-    "@octokit/rest": "^21.0.0",
-    "file-type": "^19.0.0",
-    "sharp": "^0.33.4"
+    "@octokit/plugin-retry": "^8.1.1",
+    "@octokit/plugin-throttling": "^11.0.5",
+    "@octokit/rest": "^22.0.1",
+    "file-type": "^22.0.2",
+    "sharp": "^0.35.4"
   }
 }
