@@ -13,3 +13,6 @@ FROM ghost:alpine
 
 # Copy the entire standalone adapter directory (with its isolated node_modules) straight to Ghost adapters
 COPY --chown=node:node --from=june07 /tmp/adapter/node_modules/@667/ghost-storage-github $GHOST_INSTALL/content/adapters/storage/github
+
+# Copy the entire flattened node_modules (including sharp & octokit) directly into the adapter directory
+COPY --chown=node:node --from=june07 /tmp/adapter/node_modules $GHOST_INSTALL/content/adapters/storage/github/node_modules
