@@ -11,5 +11,5 @@ RUN echo '{"private":true}' > package.json && \
 
 FROM ghost:alpine
 
-COPY --chown=node:node --from=june07 $GHOST_INSTALL/current/node_modules $GHOST_INSTALL/node_modules
-COPY --chown=node:node --from=june07 $GHOST_INSTALL/current/node_modules/@667/ghost-storage-github $GHOST_INSTALL/current/content/adapters/storage/github
+# Copy the entire standalone adapter directory (with its isolated node_modules) straight to Ghost adapters
+COPY --chown=node:node --from=june07 /tmp/adapter/node_modules/@667/ghost-storage-github $GHOST_INSTALL/content/adapters/storage/github
