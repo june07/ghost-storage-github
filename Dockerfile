@@ -8,6 +8,7 @@ WORKDIR $GHOST_INSTALL/current
 # 3. Use yarn/npm cleanly
 RUN apk add --no-cache g++ make python3 && \
     pnpm config set store-dir /var/lib/ghost/.pnpm-store/v11 && \
+    pnpm config set shamefully-hoist true && \
     SHARP_IGNORE_GLOBAL_LIBVIPS=1 pnpm add @667/ghost-storage-github
 
 FROM ghost:alpine
