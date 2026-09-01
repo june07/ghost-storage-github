@@ -11,8 +11,12 @@ RUN echo '{"private":true}' > package.json && \
 
 FROM ghost:alpine
 
-# Copy the entire standalone adapter directory (with its isolated node_modules) straight to Ghost adapters
-COPY --chown=node:node --from=june07 /tmp/adapter/node_modules/@667/ghost-storage-github $GHOST_INSTALL/content/adapters/storage/github
+# Clean target folder first and copy contents into content.orig (so volume mounts don't wipe it)
+RUN rm -rf $GHOST_INSTALL/content.orig/adapters/storage/github && \
+    mkdir -p $GHOST_INSTALL/content.orig/adapters/storage/github
 
-# Copy the entire flattened node_modules (including sharp & octokit) directly into the adapter directory
-COPY --chown=node:node --from=june07 /tmp/adapter/node_modules $GHOST_INSTALL/content/adapters/storage/github/node_modules
+# Copy adapter source files
+COPY --chown=node:node --from=june07 /tmp/adapter/node_modules/@667/ghost-storage-github/ $GHOST_INSTALL/content.orig/adapters/storage/github/
+
+# Copy dependencies directly into the adapter's node_modules folder
+COPY --chown=node:node --from=june07 /tmp/adapter/node_modules/ $GHOST_INSTALL/content.orig/adapters/storage/github/node_modules/
