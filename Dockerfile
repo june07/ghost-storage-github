@@ -1,15 +1,13 @@
 # Note: problems using ghost due to sharp dependency issues
 FROM ghost:alpine AS june07
 
-WORKDIR $GHOST_INSTALL/current
+# 1. Install build tools
+RUN apk add --no-cache g++ make python3
 
-# 1. Use correct apk syntax
-# 2. Run directly (Ghost images run as root during build anyway)
-# 3. Use yarn/npm cleanly
-RUN apk add --no-cache g++ make python3 && \
-    echo "shamefully-hoist=true" > .npmrc && \
-    pnpm config set store-dir /var/lib/ghost/.pnpm-store/v11 && \
-    SHARP_IGNORE_GLOBAL_LIBVIPS=1 pnpm add @667/ghost-storage-github
+# 2. Build the adapter into a clean, isolated directory so all dependencies live locally inside it
+WORKDIR /tmp/adapter
+RUN echo '{"private":true}' > package.json && \
+    SHARP_IGNORE_GLOBAL_LIBVIPS=1 npm install --omit=dev @667/ghost-storage-github
 
 FROM ghost:alpine
 
